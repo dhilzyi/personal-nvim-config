@@ -731,7 +731,12 @@ require("lazy").setup({
 			require("mason-tool-installer").setup({ ensure_installed = ensure_installed })
 
 			require("mason-lspconfig").setup({
-				ensure_installed = {}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
+				ensure_installed = {
+					"html",
+					"cssls",
+					"emmet_language_server",
+					"ts_ls",
+				}, -- explicitly set to an empty table (Kickstart populates installs via mason-tool-installer)
 				automatic_installation = false,
 				automatic_enable = {
 					exclude = { "luau_lsp" },
@@ -782,6 +787,9 @@ require("lazy").setup({
 			end,
 			formatters_by_ft = {
 				lua = { "stylua" },
+				html = { "prettier" },
+				css = { "prettier" },
+				javascript = { "prettier" },
 				-- Conform can also run multiple formatters sequentially
 				-- python = { "isort", "black" },
 				--
@@ -1132,6 +1140,63 @@ require("lazy").setup({
 		build = ":Cord update",
 		-- opts = {}
 	},
+	{
+		"obsidian-nvim/obsidian.nvim",
+		version = "*", -- recommended, use latest release instead of latest commit
+		ft = "markdown",
+		---@module 'obsidian'
+		---@type obsidian.config
+		opts = {
+			legacy_commands = false, -- this will be removed in the next major release
+			workspaces = {
+				{
+					name = "personal",
+					path = "~/notes/dailies",
+				},
+				{
+					name = "work",
+					path = "~/vaults/work",
+				},
+			},
+		},
+	},
+
+	-- 2. MAKE IT PRETTY (Renders checkboxes & headers like a GUI)
+	{
+		"MeanderingProgrammer/render-markdown.nvim",
+		dependencies = { "nvim-treesitter/nvim-treesitter", "nvim-tree/nvim-web-devicons" },
+		opts = {
+			-- This makes it look like a real app instead of raw text
+			render_modes = { "n", "v", "i", "c" },
+			heading = {
+				-- Make headers look big and bold
+				sign = false,
+				icons = { "󰲡 ", "󰲣 ", "󰲥 ", "󰲧 ", "󰲩 ", "󰲫 " },
+			},
+			checkbox = {
+				-- Turn [ ] into nice icons
+				unchecked = { icon = "󰄱 " },
+				checked = { icon = "󰱒 " },
+			},
+		},
+	},
+	{
+		"kristijanhusak/vim-dadbod-ui",
+		dependencies = {
+			{ "tpope/vim-dadbod", lazy = true },
+			{ "kristijanhusak/vim-dadbod-completion", ft = { "sql", "mysql", "plsql" }, lazy = true }, -- Optional
+		},
+		cmd = {
+			"DBUI",
+			"DBUIToggle",
+			"DBUIAddConnection",
+			"DBUIFindBuffer",
+		},
+		init = function()
+			-- Your DBUI configuration
+			vim.g.db_ui_use_nerd_fonts = 1
+		end,
+	},
 }, {
 	ui = {
 		-- If you are using a Nerd Font: set icons to an empty table which will use the
@@ -1153,6 +1218,24 @@ require("lazy").setup({
 		},
 	},
 })
+
+-- 🟢 NEW KEYBIND: Alt + t (for To-do)
+vim.keymap.set({ "n", "t" }, "<M-t>", function()
+	-- 1. Open the float window if closed
+	if not vim.api.nvim_win_is_valid(_G.float_state.win) then
+		-- This is a bit of a hack to call the local toggle function
+		-- Ideally, create a public function, but simulating the keypress works:
+		vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes("<C-\\>", true, false, true), "n", true)
+
+		-- Wait a tiny bit for window to open (dirty hack but works for simple scripts)
+		vim.defer_fn(function()
+			vim.cmd("e ~/notes/todo.md")
+		end, 50)
+	else
+		-- If already open, just switch to the file
+		vim.cmd("e ~/notes/todo.md")
+	end
+end, { desc = "Open To-Do List" })
 
 ---------------------------------------------------------
 -- FLOATING WINDOW MANAGER (V6 - FIXED PERSISTENCE)
