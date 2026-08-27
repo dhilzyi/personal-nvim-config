@@ -20,6 +20,8 @@ return { -- Highlight, edit, and navigate code
 			"go",
 			"javascript",
 			"css",
+			"tsx",
+			"typescript",
 		}
 		require("nvim-treesitter").install(parsers)
 		vim.api.nvim_create_autocmd("FileType", {
